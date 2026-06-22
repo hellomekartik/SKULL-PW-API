@@ -1,14 +1,6 @@
 💀 SkullPWAPI
 
-<div align="center"><img src="https://capsule-render.vercel.app/api?type=waving&height=250&color=0:0f172a,100:7c3aed&text=SkullPWAPI&fontColor=ffffff&fontSize=55&animation=fadeIn"/>⚡ Fetch PW MPD URLs, DRM Key & KID in One Request
-
-"Cloudflare Workers" (https://img.shields.io/badge/Cloudflare-Workers-orange?style=for-the-badge&logo=cloudflare)
-"API" (https://img.shields.io/badge/API-REST-blue?style=for-the-badge)
-"JavaScript" (https://img.shields.io/badge/JavaScript-ES2023-yellow?style=for-the-badge&logo=javascript)
-"GitHub Stars" (https://img.shields.io/github/stars/hellomekartik/skullpwapi?style=for-the-badge)
-"License" (https://img.shields.io/github/license/hellomekartik/skullpwapi?style=for-the-badge)
-
-A blazing-fast API for fetching Physics Wallah playback information, including signed MPD URLs and DRM details.
+<div align="center">Skull PW is a blazing-fast API for fetching Physics Wallah playback information, including signed MPD URLs and DRM details.
 
 "🌐 Website" (https://skullpwapi.ironskullx.workers.dev)
 
