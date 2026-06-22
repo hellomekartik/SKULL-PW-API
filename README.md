@@ -1,89 +1,121 @@
-# StudyRatna Key + Playback API
+💀 SkullPWAPI
 
-A Cloudflare Worker that sits between you and StudyRatna. It automatically
-fetches the live AES encryption key from the StudyRatna website, hits the
-playback manifest API, decrypts the response, and returns everything you
-need to play a video — in one request.
+<div align="center"><img src="https://capsule-render.vercel.app/api?type=waving&height=250&color=0:0f172a,100:7c3aed&text=SkullPWAPI&fontColor=ffffff&fontSize=55&animation=fadeIn"/>⚡ Fetch PW MPD URLs, DRM Key & KID in One Request
+
+"Cloudflare Workers" (https://img.shields.io/badge/Cloudflare-Workers-orange?style=for-the-badge&logo=cloudflare)
+"API" (https://img.shields.io/badge/API-REST-blue?style=for-the-badge)
+"JavaScript" (https://img.shields.io/badge/JavaScript-ES2023-yellow?style=for-the-badge&logo=javascript)
+"GitHub Stars" (https://img.shields.io/github/stars/hellomekartik/skullpwapi?style=for-the-badge)
+"License" (https://img.shields.io/github/license/hellomekartik/skullpwapi?style=for-the-badge)
+
+A blazing-fast API for fetching Physics Wallah playback information, including signed MPD URLs and DRM details.
+
+"🌐 Website" (https://skullpwapi.ironskullx.workers.dev)
+
+</div>---
+
+✨ Features
+
+- ⚡ Ultra-fast response times
+- 🔑 Fetches DRM Key and KID
+- 🎥 Returns signed MPD URLs
+- ☁️ Built on Cloudflare Workers
+- 🔄 Automatically handles key rotations
+- 🚀 Single API request for everything
+- 📦 Lightweight and easy to integrate
+- 🌍 Globally distributed edge infrastructure
 
 ---
 
-## Routes
+📡 API Endpoints
 
-### `GET /`
-Returns the live AES encryption key fetched fresh from StudyRatna's JS source.
-Key is always re-fetched — never cached. So even if StudyRatna rotates the key,
-this always returns the current one.
+Get Current Encryption Key
 
-**Request:**
-```
-GET https://YOUR_WORKER.workers.dev/
-```
+GET /
 
-**Response:**
-```json
+Example
+
+curl https://skullpwapi.ironskullx.workers.dev/
+
+Response
+
 {
-  "key_string":  "df7243b0dbaf5cc0ae97c7ae26415a4735c79b60879bc1da2588a76239488aa6",
-  "aes_key_hex": "fc7fdcb4fce4c1ee232c9c5d7a0613264da186a898910539f05a3666b5359296"
+  "key_string": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "aes_key_hex": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 }
-```
 
 ---
 
-### `GET /?batchId=&subjectId=&lectureId=`
-Fetches the AES key + hits the StudyRatna playback manifest API — both in
-parallel. Decrypts the response and returns the full signed video URLs (M3U8
-and MPD), the DRM KID, and the ClearKey.
+Get Playback Information
 
-**Request:**
-```
-GET https://YOUR_WORKER.workers.dev/?batchId=698ad3519549b300a5e1cc6a&subjectId=69b569aeeffdf9567d75f816&lectureId=6a2c546d5a440ad1a6b91cd1
-```
+GET /?batchId=&subjectId=&lectureId=
 
-**Response:**
-```json
+Example
+
+curl "https://skullpwapi.ironskullx.workers.dev/?batchId=xxxxx&subjectId=xxxxx&lectureId=xxxxx"
+
+Response
+
 {
-  "videoUrl_m3u8": "https://sec-prod-mediacdn.pw.live/.../master.m3u8?URLPrefix=...&Expires=...&KeyName=pw-prod-key&Signature=...",
-  "videoUrl_mpd":  "https://sec-prod-mediacdn.pw.live/.../master.mpd?URLPrefix=...&Expires=...&KeyName=pw-prod-key&Signature=...",
-  "kid": "5c4448e5621d38660034ec832f9ee1ea",
-  "key": "ffdb209f1ad2ed800b97be1f31617d97"
+  "videoUrl_mpd": "https://....master.mpd",
+  "kid": "xxxxxxxxxxxxxxxx",
+  "key": "xxxxxxxxxxxxxxxx"
 }
-```
-
-Both `videoUrl_m3u8` and `videoUrl_mpd` are fully signed and ready to play —
-no need to append anything.
 
 ---
 
-## Deploy (5 steps)
+📊 Architecture
 
-**1. Install Node.js** — https://nodejs.org (v18+)
-
-**2. Install Wrangler:**
-```bash
-npm install -g wrangler
-```
-
-**3. Login to Cloudflare:**
-```bash
-wrangler login
-```
-
-**4. Install and deploy:**
-```bash
-cd studyratna-worker
-npm install
-npm run deploy
-```
-
-**5. Your API is live at:**
-```
-https://studyratna-worker.YOUR_SUBDOMAIN.workers.dev
-```
+Client
+   │
+   ▼
+SkullPWAPI
+   │
+   ├── Fetch AES Key
+   ├── Fetch Playback Manifest
+   ├── Decrypt Response
+   └── Return MPD + DRM Key + KID
 
 ---
 
-## Local testing
-```bash
-npm run dev
-# Runs at http://localhost:8787
-```
+🌐 Website
+
+Official API Endpoint
+
+https://skullpwapi.ironskullx.workers.dev
+
+---
+
+👨‍💻 Developer
+
+<div align="center">Kartik Bansal
+
+🚀 Full-Stack Developer
+☁️ Cloudflare Worker Developer
+⚡ API & Reverse Engineering Enthusiast
+🎓 Student & Tech Explorer
+
+GitHub: https://github.com/hellomekartik
+
+Website: https://skullpwapi.ironskullx.workers.dev
+
+</div>---
+
+⭐ Support
+
+If this project helped you, consider:
+
+⭐ Star the repository
+🍴 Fork the project
+🐛 Report issues
+🚀 Contribute to the project
+
+---
+
+<div align="center">💀 SkullPWAPI
+
+Fast • Lightweight • Reliable
+
+Built with ❤️ by Kartik Bansal
+
+</div>
