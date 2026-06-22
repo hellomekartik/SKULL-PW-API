@@ -1,88 +1,42 @@
-````md
-<div align="center">
-
 # 💀 SkullPWAPI
 
 ### ⚡ Lightning Fast Physics Wallah Playback API
 
 Fetch signed MPD URLs, DRM Keys, and KIDs with a single request.
 
-<p align="center">
-  <a href="https://skullpwapi.ironskullx.workers.dev">
-    <img src="https://img.shields.io/badge/API-Live-success?style=for-the-badge&logo=cloudflare" />
-  </a>
-  <img src="https://img.shields.io/badge/Cloudflare-Workers-orange?style=for-the-badge&logo=cloudflare" />
-  <img src="https://img.shields.io/badge/DRM-Supported-red?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Edge-Distributed-blue?style=for-the-badge" />
-</p>
+![API](https://img.shields.io/badge/API-Live-success?style=for-the-badge\&logo=cloudflare)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-Workers-orange?style=for-the-badge\&logo=cloudflare)
+![DRM](https://img.shields.io/badge/DRM-Supported-red?style=for-the-badge)
+![Edge](https://img.shields.io/badge/Edge-Distributed-blue?style=for-the-badge)
 
-<p align="center">
-  <strong>Fast • Lightweight • Reliable</strong>
-</p>
+**Fast • Lightweight • Reliable**
 
-<p align="center">
-  Built for developers who need playback information instantly.
-</p>
-
----
-
-### 🌐 Live API
-
+🌐 **Live API:**
 https://skullpwapi.ironskullx.workers.dev
-
-</div>
 
 ---
 
 # ✨ Features
 
-<table>
-<tr>
-<td width="50%">
+## 🚀 Performance
 
-### 🚀 Performance
+* Ultra-fast response times
+* Globally distributed edge network
+* Powered by Cloudflare Workers
+* Lightweight architecture
 
-- Ultra-fast response times
-- Globally distributed edge network
-- Powered by Cloudflare Workers
-- Lightweight architecture
+## 🔐 DRM Support
 
-</td>
-<td width="50%">
-
-### 🔐 DRM Support
-
-- Fetch DRM Key
-- Fetch DRM KID
-- Signed MPD URLs
-- Automatic key handling
-
-</td>
-</tr>
-</table>
-
-### ⚡ One Request. Everything.
-
-```mermaid
-graph LR
-A[Client Request] --> B[SkullPWAPI]
-B --> C[Fetch AES Key]
-B --> D[Fetch Manifest]
-B --> E[Decrypt Response]
-C --> F[Return MPD URL]
-D --> F
-E --> F
-````
+* Fetch DRM Key
+* Fetch DRM KID
+* Returns signed MPD URLs
+* Automatic key rotation handling
 
 ---
 
 # 📡 API Reference
 
 ## 🔑 Get Current Encryption Key
-
-Returns the latest encryption key used by the API.
-
-### Endpoint
 
 ```http
 GET /
@@ -106,14 +60,6 @@ curl https://skullpwapi.ironskullx.workers.dev/
 ---
 
 ## 🎥 Get Playback Information
-
-Returns:
-
-* Signed MPD URL
-* DRM KID
-* DRM Key
-
-### Endpoint
 
 ```http
 GET /?batchId=&subjectId=&lectureId=
@@ -140,76 +86,29 @@ curl "https://skullpwapi.ironskullx.workers.dev/?batchId=xxxxx&subjectId=xxxxx&l
 # 🏗 Architecture
 
 ```text
-┌─────────────┐
-│   Client    │
-└──────┬──────┘
-       │
-       ▼
-┌───────────────────────┐
-│      SkullPWAPI       │
-├───────────────────────┤
-│ Fetch AES Key         │
-│ Fetch Playback Data   │
-│ Decrypt Response      │
-│ Extract DRM Details   │
-└───────────┬───────────┘
-            │
-            ▼
-┌───────────────────────┐
-│ MPD + KID + DRM Key   │
-└───────────────────────┘
+Client
+   │
+   ▼
+SkullPWAPI
+   ├── Fetch AES Key
+   ├── Fetch Manifest
+   ├── Decrypt Response
+   └── Return MPD + DRM Details
 ```
-
----
-
-# ⚙ Example Usage
-
-### JavaScript
-
-```javascript
-const response = await fetch(
-  "https://skullpwapi.ironskullx.workers.dev/?batchId=xxx&subjectId=xxx&lectureId=xxx"
-);
-
-const data = await response.json();
-
-console.log(data.videoUrl_mpd);
-console.log(data.kid);
-console.log(data.key);
-```
-
----
-
-# 🌎 Infrastructure
-
-| Feature             | Status |
-| ------------------- | ------ |
-| Cloudflare Workers  | ✅      |
-| Global Edge Network | ✅      |
-| Auto Key Rotation   | ✅      |
-| Signed MPD URLs     | ✅      |
-| DRM Extraction      | ✅      |
-| High Availability   | ✅      |
 
 ---
 
 # 👨‍💻 Developer
 
-<div align="center">
-
 ## Kartik Bansal
 
-**Full Stack Developer** • **Cloudflare Worker Developer**
+🚀 Full Stack Developer
+☁️ Cloudflare Worker Developer
+⚡ API & Reverse Engineering Enthusiast
 
-Passionate about APIs, Reverse Engineering, Edge Computing, and Building High-Performance Services.
+GitHub: https://github.com/hellomekartik
 
-### Connect
-
-GitHub → https://github.com/hellomekartik
-
-Website → https://skullpwapi.ironskullx.workers.dev
-
-</div>
+Website: https://skullpwapi.ironskullx.workers.dev
 
 ---
 
@@ -217,24 +116,15 @@ Website → https://skullpwapi.ironskullx.workers.dev
 
 If this project helped you:
 
-```text
-⭐ Star the Repository
-🍴 Fork the Project
-🐛 Report Issues
-🚀 Contribute
-```
+* ⭐ Star the repository
+* 🍴 Fork the project
+* 🐛 Report issues
+* 🚀 Contribute
 
 ---
 
-<div align="center">
+## 💀 SkullPWAPI
 
-# 💀 SkullPWAPI
+**Fast • Secure • Modern**
 
-### Fast • Secure • Modern
-
-Powered by Cloudflare Workers ⚡
-
-Made with ❤️ by Kartik Bansal
-
-</div>
-```
+Built with ❤️ by Kartik Bansal
