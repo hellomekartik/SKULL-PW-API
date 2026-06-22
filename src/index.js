@@ -64,20 +64,13 @@ async function decrypt(encryptedStr, aesKeyHex) {
   return JSON.parse(new TextDecoder().decode(plain));
 }
 
-// ── Build full signed URLs (m3u8 + mpd) ──────────────────────────
-function buildSignedUrls(videoUrl, signedUrl) {
-  // signedUrl is like: "?URLPrefix=...&Expires=...&KeyName=...&Signature=..."
-  // videoUrl  is like: "https://sec-prod-mediacdn.pw.live/.../master.m3u8"
-  // Result: full URL = base_without_filename + "master.m3u8" + signedParams
-  //                    base_without_filename + "master.mpd"  + signedParams
-
+// ── Build full signed MPD URL ────────────────────────────────────
+function buildSignedMpdUrl(videoUrl, signedUrl) {
   const params  = signedUrl.startsWith("?") ? signedUrl : "?" + signedUrl;
   const baseDir = videoUrl.substring(0, videoUrl.lastIndexOf("/") + 1);
 
-  return {
-    m3u8: baseDir + "master.m3u8" + params,
-    mpd:  baseDir + "master.mpd"  + params,
-  };
+  // Ab yeh function sirf signed MPD string return karega
+  return baseDir + "master.mpd" + params;
 }
 
 // ── Worker ────────────────────────────────────────────────────────
@@ -108,13 +101,13 @@ export default {
       const signedUrl = d.videoDetails?.signedUrl ?? d.signedUrl ?? "";
       const videoUrl  = d.videoDetails?.videoUrl  ?? d.videoUrl  ?? "";
 
-      const urls = buildSignedUrls(videoUrl, signedUrl);
+      // Sirf MPD URL generate hoga
+      const mpdUrl = buildSignedMpdUrl(videoUrl, signedUrl);
 
       return json({
-        videoUrl_m3u8: urls.m3u8,
-        videoUrl_mpd:  urls.mpd,
-        kid:           ck.kid,
-        key:           ck.k,
+        videoUrl_mpd: mpdUrl,
+        kid:          ck.kid,
+        key:          ck.k,
       });
     }
 
@@ -126,4 +119,3 @@ export default {
     });
   },
 };
-    
