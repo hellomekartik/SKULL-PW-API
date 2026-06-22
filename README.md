@@ -1,102 +1,89 @@
-# StudyRatna Key Engine — Cloudflare Worker
+# StudyRatna Key + Playback API
 
-## Deploy kaise karein (Step by Step)
+A Cloudflare Worker that sits between you and StudyRatna. It automatically
+fetches the live AES encryption key from the StudyRatna website, hits the
+playback manifest API, decrypts the response, and returns everything you
+need to play a video — in one request.
 
-### Step 1 — Node.js install karo (agar nahi hai)
-```bash
-# Windows: nodejs.org se download karo
-# Mac:
-brew install node
+---
+
+## Routes
+
+### `GET /`
+Returns the live AES encryption key fetched fresh from StudyRatna's JS source.
+Key is always re-fetched — never cached. So even if StudyRatna rotates the key,
+this always returns the current one.
+
+**Request:**
+```
+GET https://YOUR_WORKER.workers.dev/
 ```
 
-### Step 2 — Wrangler CLI install karo
+**Response:**
+```json
+{
+  "key_string":  "df7243b0dbaf5cc0ae97c7ae26415a4735c79b60879bc1da2588a76239488aa6",
+  "aes_key_hex": "fc7fdcb4fce4c1ee232c9c5d7a0613264da186a898910539f05a3666b5359296"
+}
+```
+
+---
+
+### `GET /?batchId=&subjectId=&lectureId=`
+Fetches the AES key + hits the StudyRatna playback manifest API — both in
+parallel. Decrypts the response and returns the full signed video URLs (M3U8
+and MPD), the DRM KID, and the ClearKey.
+
+**Request:**
+```
+GET https://YOUR_WORKER.workers.dev/?batchId=698ad3519549b300a5e1cc6a&subjectId=69b569aeeffdf9567d75f816&lectureId=6a2c546d5a440ad1a6b91cd1
+```
+
+**Response:**
+```json
+{
+  "videoUrl_m3u8": "https://sec-prod-mediacdn.pw.live/.../master.m3u8?URLPrefix=...&Expires=...&KeyName=pw-prod-key&Signature=...",
+  "videoUrl_mpd":  "https://sec-prod-mediacdn.pw.live/.../master.mpd?URLPrefix=...&Expires=...&KeyName=pw-prod-key&Signature=...",
+  "kid": "5c4448e5621d38660034ec832f9ee1ea",
+  "key": "ffdb209f1ad2ed800b97be1f31617d97"
+}
+```
+
+Both `videoUrl_m3u8` and `videoUrl_mpd` are fully signed and ready to play —
+no need to append anything.
+
+---
+
+## Deploy (5 steps)
+
+**1. Install Node.js** — https://nodejs.org (v18+)
+
+**2. Install Wrangler:**
 ```bash
 npm install -g wrangler
 ```
 
-### Step 3 — Cloudflare login karo
+**3. Login to Cloudflare:**
 ```bash
 wrangler login
-# Browser mein Cloudflare account se login karo
 ```
 
-### Step 4 — Project folder mein jao
+**4. Install and deploy:**
 ```bash
 cd studyratna-worker
 npm install
+npm run deploy
 ```
 
-### Step 5 — Local test karo (optional)
+**5. Your API is live at:**
+```
+https://studyratna-worker.YOUR_SUBDOMAIN.workers.dev
+```
+
+---
+
+## Local testing
 ```bash
 npm run dev
-# http://localhost:8787 pe open hoga
+# Runs at http://localhost:8787
 ```
-
-### Step 6 — Deploy karo
-```bash
-npm run deploy
-# Output: https://studyratna-worker.YOUR_SUBDOMAIN.workers.dev
-```
-
----
-
-## API Routes
-
-| Method | Route           | Description                              |
-|--------|-----------------|------------------------------------------|
-| GET    | `/`             | Live key fetch (1hr cached)              |
-| GET    | `/key`          | Same as above                            |
-| GET    | `/key?refresh=true` | Force re-fetch from JS source        |
-| GET    | `/health`       | Health check                             |
-| POST   | `/decrypt`      | Decrypt an encrypted string              |
-| POST   | `/decrypt-full` | Fetch API URL + auto decrypt in one shot |
-
----
-
-## Usage Examples
-
-### Get live key:
-```bash
-curl https://studyratna-worker.YOUR.workers.dev/key
-```
-
-Response:
-```json
-{
-  "success": true,
-  "cached": false,
-  "latency_ms": 312,
-  "key_string": "df7243b0dbaf5cc0ae97c7ae26415a4735c79b60879bc1da2588a76239488aa6",
-  "aes_key_hex": "fc7fdcb4fce4c1ee232c9c5d7a0613264da186a898910539f05a3666b5359296",
-  "algorithm": "AES-256-CBC",
-  "derivation": "SHA256(key_string)",
-  "fetched_at": "2026-06-22T07:00:00.000Z"
-}
-```
-
-### Decrypt encrypted string:
-```bash
-curl -X POST https://studyratna-worker.YOUR.workers.dev/decrypt \
-  -H "Content-Type: application/json" \
-  -d '{"encrypted":"IV_HEX:CIPHER_HEX"}'
-```
-
-### Full pipeline (fetch API + decrypt in one shot):
-```bash
-curl -X POST https://studyratna-worker.YOUR.workers.dev/decrypt-full \
-  -H "Content-Type: application/json" \
-  -d '{
-    "api_url": "https://api-lite.studyratna.org/V1/web/pw/playback-manifest/69e595902715bc04ca450fff/698ad3519549b300a5e1cc6a/69b5698ee506a608ee297ed1"
-  }'
-```
-
----
-
-## Speed Optimisations
-
-- **CF Edge Cache**: JS chunks cached 1hr at Cloudflare edge (not hitting studyratna server every request)
-- **In-memory cache**: Key cached in Worker isolate memory for 1hr — zero latency on repeat calls
-- **Parallel fetch**: All JS chunks fetched simultaneously — stops at first match
-- **Priority chunk**: Known chunk (`0soxf3iz6lfuq.js`) checked first — usually hits on first try
-- **SubtleCrypto**: Browser-native AES + SHA256 — no external crypto library needed
-- **parallel key + API fetch**: `/decrypt-full` fetches key AND API simultaneously
