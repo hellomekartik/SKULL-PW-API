@@ -26,12 +26,11 @@ function json(data, status = 200) {
   });
 }
 
-// ── Fetch live key (always fresh, no cache) ───────────────────────
+// ── Fetch live AES key (always fresh, no cache) ───────────────────
 async function fetchLiveKey() {
   const html   = await fetch(SITE_URL, { headers: { "User-Agent": UA } }).then(r => r.text());
   const chunks = [...new Set([...html.matchAll(/\/_next\/static\/chunks\/[^"'>\s]+\.js/g)].map(m => m[0]))];
 
-  // Fetch all chunks in parallel, stop on first key found
   const rawKey = await new Promise((resolve, reject) => {
     let done = false, errs = 0;
     for (const path of chunks) {
@@ -65,6 +64,22 @@ async function decrypt(encryptedStr, aesKeyHex) {
   return JSON.parse(new TextDecoder().decode(plain));
 }
 
+// ── Build full signed URLs (m3u8 + mpd) ──────────────────────────
+function buildSignedUrls(videoUrl, signedUrl) {
+  // signedUrl is like: "?URLPrefix=...&Expires=...&KeyName=...&Signature=..."
+  // videoUrl  is like: "https://sec-prod-mediacdn.pw.live/.../master.m3u8"
+  // Result: full URL = base_without_filename + "master.m3u8" + signedParams
+  //                    base_without_filename + "master.mpd"  + signedParams
+
+  const params  = signedUrl.startsWith("?") ? signedUrl : "?" + signedUrl;
+  const baseDir = videoUrl.substring(0, videoUrl.lastIndexOf("/") + 1);
+
+  return {
+    m3u8: baseDir + "master.m3u8" + params,
+    mpd:  baseDir + "master.mpd"  + params,
+  };
+}
+
 // ── Worker ────────────────────────────────────────────────────────
 export default {
   async fetch(req) {
@@ -75,11 +90,11 @@ export default {
     const subjectId = params.get("subjectId");
     const lectureId = params.get("lectureId");
 
-    // ── With params → fetch key + API in parallel → decrypt → return only what's needed ──
+    // ── Route: /?batchId=&subjectId=&lectureId= ───────────────────
     if (batchId && subjectId && lectureId) {
       const apiUrl = `${API_BASE}/${lectureId}/${batchId}/${subjectId}`;
 
-      // Key fetch + API call — PARALLEL for max speed
+      // Key fetch + API call — PARALLEL
       const [{ aesKeyHex }, apiResp] = await Promise.all([
         fetchLiveKey(),
         fetch(apiUrl, { headers: { "User-Agent": UA } }),
@@ -88,17 +103,22 @@ export default {
       const apiJson   = await apiResp.json();
       const decrypted = await decrypt(apiJson.encrypted, aesKeyHex);
 
-      const d  = decrypted.data;
-      const ck = d.clearkeys?.[0] ?? {};
+      const d         = decrypted.data;
+      const ck        = d.clearkeys?.[0] ?? {};
+      const signedUrl = d.videoDetails?.signedUrl ?? d.signedUrl ?? "";
+      const videoUrl  = d.videoDetails?.videoUrl  ?? d.videoUrl  ?? "";
+
+      const urls = buildSignedUrls(videoUrl, signedUrl);
 
       return json({
-        videoUrl: d.videoUrl,
-        kid:      ck.kid,
-        key:      ck.k,
+        videoUrl_m3u8: urls.m3u8,
+        videoUrl_mpd:  urls.mpd,
+        kid:           ck.kid,
+        key:           ck.k,
       });
     }
 
-    // ── No params → return AES key + key string (always fresh) ──
+    // ── Route: / (no params) → AES key info ──────────────────────
     const { rawKey, aesKeyHex } = await fetchLiveKey();
     return json({
       key_string:  rawKey,
@@ -106,4 +126,4 @@ export default {
     });
   },
 };
-          
+    
