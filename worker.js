@@ -1,5 +1,5 @@
 /**
- * PW4Free Decrypt API — Cloudflare Worker
+ * SKULLPWAPI — Cloudflare Worker
  *
  * Routes:
  *   GET /                              → list all available routes
@@ -9,7 +9,7 @@
  * Pipeline:
  *   1. Fetch AES keys live from pw4free.in JS bundle (fallback to hardcoded if bundle unreachable)
  *   2. Call liteapi videodetails → decrypt response → get MPD URL + signedUrl
- *   3. Fetch MPD → extract KID LOCALLY from XML (regex on cenc:default_KID attribute)
+ *   3. Fetch MPD → extract KID LOCALLY from XML (regex)
  *   4. Call liteapi getotp?kid=<kid> → decrypt → get content key
  *   5. Return signedMpdUrl + KID + clearKey
  */
@@ -80,7 +80,7 @@ async function fetchWithTimeout(url, opts = {}, ms = FETCH_TIMEOUT_MS) {
  */
 function extractKidsLocally(mpdText) {
   const kids = new Set();
-  // Primary: cenc:default_KID="fb132a1d-b65b-513f-669a-d64d9f9e43b2"
+  // Fetching process"
   for (const m of mpdText.matchAll(/default_KID="([0-9a-fA-F-]{32,36})"/gi))
     kids.add(m[1].replace(/-/g, '').toLowerCase());
   // Fallback: kid="<32 hex chars>"
@@ -175,7 +175,7 @@ function errResp(message, status = 500, extra = {}) {
 
 function handleIndex() {
   return jsonResp({
-    service: 'PW4Free Decrypt API',
+    service: 'SKULLPWAPI',
     version: '1.1.0',
     routes: [
       {
