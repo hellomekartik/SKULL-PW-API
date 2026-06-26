@@ -30,13 +30,13 @@ https://skullpwapi.ironskullx.workers.dev
 * Fetch DRM Key
 * Fetch DRM KID
 * Returns signed MPD URLs
-* Automatic key rotation handling
+* Automatic decryption key rotation handling
 
 ---
 
 # 📡 API Reference
 
-## 🔑 Get Current Encryption Key
+## 🔑 Get available routes
 
 ```http
 GET /
@@ -52,32 +52,58 @@ curl https://skullpwapi.ironskullx.workers.dev/
 
 ```json
 {
-  "key_string": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "aes_key_hex": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  "service": "SKULLPWAPI",
+  "version": "1.1.0",
+  "............."
 }
 ```
 
 ---
 
-## 🎥 Get Playback Information
+## 🎥 Get keys for decryption
 
 ```http
-GET /?batchId=&subjectId=&lectureId=
+GET /
 ```
 
 ### Example
 
 ```bash
-curl "https://skullpwapi.ironskullx.workers.dev/?batchId=xxxxx&subjectId=xxxxx&lectureId=xxxxx"
+curl "https://skullpwapi.ironskullx.workers.dev/keys
 ```
 
 ### Response
 
 ```json
 {
-  "videoUrl_mpd": "https://example.com/master.mpd",
-  "kid": "xxxxxxxxxxxxxxxx",
-  "key": "xxxxxxxxxxxxxxxx"
+  "aesKey": "xxxxxx",
+  "aesIv": "xxxxxx",
+  "status": "live",
+  "note": "Keys fetched fresh from pw4free.in JS bundle"
+}
+```
+
+---
+
+## 🎥 Get MPD + DRM Details
+
+```http
+GET /?batchId=xxxx&lectureId=xxxx
+```
+
+### Example
+
+```bash
+curl "https://skullpwapi.ironskullx.workers.dev/?batchId=xxxx&lectureId=xxxx
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "signedMpdUrl": "https://example.com/master.mpd?URLPrefix=xxxx",
+"............."
 }
 ```
 
@@ -90,8 +116,8 @@ Client
    │
    ▼
 SkullPWAPI
-   ├── Fetch AES Key
-   ├── Fetch Manifest
+   ├── Fetch AES Key and IV
+   ├── Fetch encrypted response
    ├── Decrypt Response
    └── Return MPD + DRM Details
 ```
