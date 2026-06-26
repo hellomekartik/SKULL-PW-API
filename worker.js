@@ -9,9 +9,9 @@
  * Pipeline:
  *   1. Fetch AES keys live from pw4free.in JS bundle (fallback to hardcoded if bundle unreachable)
  *   2. Call liteapi videodetails → decrypt response → get MPD URL + signedUrl
- *   3. Fetch MPD → extract KID LOCALLY from XML (regex)
+ *   3. Fetch MPD → extract KID LOCALLY from XML
  *   4. Call liteapi getotp?kid=<kid> → decrypt → get content key
- *   5. Return signedMpdUrl + KID + clearKey
+ *   5. Return signedMpdUrl + kid + clearKey
  */
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -74,19 +74,13 @@ async function fetchWithTimeout(url, opts = {}, ms = FETCH_TIMEOUT_MS) {
 // ─── KID extraction — LOCAL, from MPD XML text ───────────────────────────────
 
 /**
- * Extract all KIDs directly from the MPD XML string.
- * Checks cenc:default_KID and fallback kid= attributes.
- * No extra network call — purely local regex over the fetched MPD text.
+ * Extracts KID directly from the MPD XML string — no extra network call.
+ * Purely local regex over the already-fetched MPD text.
  */
-function extractKidsLocally(mpdText) {
-  const kids = new Set();
-  // Fetching process"
-  for (const m of mpdText.matchAll(/default_KID="([0-9a-fA-F-]{32,36})"/gi))
-    kids.add(m[1].replace(/-/g, '').toLowerCase());
-  // Fallback: kid="<32 hex chars>"
-  for (const m of mpdText.matchAll(/\bkid="([0-9a-fA-F]{32})"/gi))
-    kids.add(m[1].toLowerCase());
-  return [...kids];
+function extractKidLocally(mpdText) {
+  const m = mpdText.match(/default_KID="([0-9a-fA-F-]{32,36})"/i);
+  if (m) return m[1].replace(/-/g, '').toLowerCase();
+  return null;
 }
 
 // ─── Key management ───────────────────────────────────────────────────────────
@@ -118,11 +112,11 @@ async function fetchLiveKeys() {
     };
   } catch (err) {
     return {
-      aesKey:      FB_KEY,
-      aesIv:       FB_IV,
-      status:      'fallback',
-      note:        'Could not reach pw4free.in bundle — using hardcoded fallback keys',
-      fetchError:  err.message
+      aesKey:     FB_KEY,
+      aesIv:      FB_IV,
+      status:     'fallback',
+      note:       'Could not reach pw4free.in bundle — using hardcoded fallback keys',
+      fetchError: err.message
     };
   }
 }
@@ -188,7 +182,7 @@ function handleIndex() {
       },
       {
         path:        'GET /?batchId=<BATCH_ID>&lectureId=<LECTURE_ID>',
-        description: 'Full pipeline: decrypt videodetails → fetch MPD → extract KID locally from XML → decrypt OTP → returns signedMpdUrl + KID + content key',
+        description: 'Full pipeline: decrypt videodetails → fetch MPD → extract KID locally → decrypt OTP → returns signedMpdUrl + kid + clearKey',
         example:     '/?batchId=698ad3519549b300a5e1cc6a&lectureId=69ff18a7ef0d5bb3113d55b1'
       }
     ]
@@ -200,7 +194,7 @@ async function handleKeys() {
   return jsonResp({
     aesKey:     keys.aesKey,
     aesIv:      keys.aesIv,
-    status:     keys.status,          // "live" | "fallback"
+    status:     keys.status,       // "live" | "fallback"
     note:       keys.note,
     ...(keys.fetchError ? { fetchError: keys.fetchError } : {})
   });
@@ -264,42 +258,42 @@ async function handleDecrypt(batchId, lectureId) {
     return errResp(`MPD fetch error: ${e.message}`, 502, { step: 'mpd_fetch' });
   }
 
-  // 4. Extract KID(s) LOCALLY from MPD XML — no extra network call
-  const kids = extractKidsLocally(mpdText);
-  if (!kids.length)
+  // 4. Extract KID locally from MPD XML — no extra network call
+  const kid = extractKidLocally(mpdText);
+  if (!kid)
     return errResp('No KID found in MPD XML', 502, {
       step:       'kid_extraction',
       mpdPreview: mpdText.slice(0, 600)
     });
 
-  // 5. Fetch + decrypt OTP (content key) for all KIDs in parallel
-  const clearKeys = {};
+  // 5. Fetch + decrypt OTP (content key)
+  let rawOtp;
   try {
-    await Promise.all(kids.map(async kid => {
-      let rawOtp;
-      try {
-        rawOtp = await liteGet(`/getotp?kid=${kid}`);
-      } catch (e) {
-        throw new Error(`getotp fetch failed for KID ${kid}: ${e.message}`);
-      }
-      let otp;
-      try {
-        otp = await decryptEnvelope(rawOtp, keys.aesKey, keys.aesIv);
-      } catch (e) {
-        throw new Error(`getotp decrypt failed for KID ${kid}: ${e.message}`);
-      }
-      if (otp.clearKeys) Object.assign(clearKeys, otp.clearKeys);
-    }));
+    rawOtp = await liteGet(`/getotp?kid=${kid}`);
   } catch (e) {
-    return errResp(e.message, 502, { step: 'getotp' });
+    return errResp(`getotp fetch failed: ${e.message}`, 502, { step: 'getotp_fetch' });
   }
 
-  // 6. Return everything
+  let otp;
+  try {
+    otp = await decryptEnvelope(rawOtp, keys.aesKey, keys.aesIv);
+  } catch (e) {
+    return errResp(`getotp decrypt failed: ${e.message}`, 502, { step: 'getotp_decrypt' });
+  }
+
+  const clearKey = otp.clearKeys?.[kid];
+  if (!clearKey)
+    return errResp('Content key not found in OTP response', 502, {
+      step: 'getotp_parse',
+      otp
+    });
+
+  // 6. Return
   return jsonResp({
     success:      true,
     signedMpdUrl,
-    kids,
-    clearKeys,
+    kid,
+    clearKey,
     keysStatus:   keys.status,
     videoMeta: {
       videoId:        details.data.videoId,
