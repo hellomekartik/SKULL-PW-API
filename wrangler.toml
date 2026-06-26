@@ -2,8 +2,3 @@ name = "skullpwapi"
 main = "worker.js"
 compatibility_date = "2024-09-01"
 compatibility_flags = ["nodejs_compat"]
-
-# Optional: custom domain routes
-# [[routes]]
-# pattern = "api.yourdomain.com/*"
-# zone_name = "yourdomain.com"
