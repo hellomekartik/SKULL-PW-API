@@ -63,7 +63,7 @@ curl https://skullpwapi.ironskullx.workers.dev/
 ## 🎥 Get keys for decryption
 
 ```http
-GET /
+GET /keys
 ```
 
 ### Example
